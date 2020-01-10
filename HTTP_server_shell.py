@@ -12,8 +12,8 @@ import os
 IP = '127.0.0.1'
 PORT = 80
 DEFAULT_URL = '\\'
-REDIRECTION_DICTIONARY = ['C:\Cyber\webroot\\redirection_file.html']
-FORBIDDEN_DIRECTORIES = ['C:\Cyber\webroot\classified\\']
+REDIRECTION_DICTIONARY = ['webroot\\redirection_file.html']
+FORBIDDEN_DIRECTORIES = ['webroot\\classified\\']
 SOCKET_TIMEOUT = 60000
 # REQUEST_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
@@ -54,7 +54,7 @@ def handle_client_request(resource, client_socket):
     # TO DO: STATUS-CODE check if URL had been redirected, not available or other error code. For example:
     if url in REDIRECTION_DICTIONARY:
         status_code = '302 Found'
-        optional_field = r'C:\Cyber\webroot\redirection_file.html\r\n'
+        optional_field = r'webroot\redirection_file.html\r\n'
     elif url in FORBIDDEN_DIRECTORIES:
         status_code = '403 Forbidden'
         optional_field = str(len(FORBIDDEN_DIRECTORIES)) + '\r\n'
@@ -81,7 +81,7 @@ def handle_client_request(resource, client_socket):
             http_header += 'Content-Type: %s\r\n' % 'text/css'
         http_header += '\r\n'
         client_socket.send(http_header.encode())
-        # client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
+        client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
         chunk = data[0]
         client_socket.sendall(chunk.encode())
         for chunk in data[1:]:
@@ -97,7 +97,7 @@ def validate_http_request(request):
     if not req[0] == 'GET':
         return False, '500 Internal Server Error'
 
-    final_request = 'C:\Cyber\webroot' + req[1].replace('/','\\') # Example: C:\Cyber\webroot\index.html
+    final_request = 'webroot' + req[1].replace('/','\\') # Example: C:\Cyber\webroot\index.html
     if not os.path.isfile(final_request):
         return False, '404 Not Found'
     if not req[2] == 'HTTP/1.1':
