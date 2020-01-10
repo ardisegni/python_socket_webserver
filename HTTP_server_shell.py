@@ -19,11 +19,24 @@ SOCKET_TIMEOUT = 60000
 
 
 def get_file_data(filename):
+    filetype = filename.split('.')[-1]
+
     """ Get data from file """
     print('Trying to open file ' + filename)
-    with open(filename, 'r', encoding="utf8") as f:
-        file_data = f.read()
-        return file_data
+    if filetype == 'ico' or filetype == 'jpg':
+        file = open(filename, 'r')
+    else:
+        file = open(filename, 'r', encoding="utf8")
+
+    with file as f:
+        chunk = f.read(1024)
+        file_data = (chunk,)
+        while chunk:
+            print("Reading chunk")
+            chunk = f.read(1024)
+            file_data += (chunk,)
+
+    return file_data
 
 
 def handle_client_request(resource, client_socket):
@@ -36,39 +49,44 @@ def handle_client_request(resource, client_socket):
 
     filetype = resource.split('.')[-1]
     filename = resource
-    status_code = ''
     optional_field = ''
 
     # TO DO: STATUS-CODE check if URL had been redirected, not available or other error code. For example:
     if url in REDIRECTION_DICTIONARY:
         status_code = '302 Found'
         optional_field = r'C:\Cyber\webroot\redirection_file.html\r\n'
-    if url in FORBIDDEN_DIRECTORIES:
-        status_code = '403 Forbidden\r\n'
-        optional_field = str(len(FORBIDDEN_DIRECTORIES))
+    elif url in FORBIDDEN_DIRECTORIES:
+        status_code = '403 Forbidden'
+        optional_field = str(len(FORBIDDEN_DIRECTORIES)) + '\r\n'
+    else:
+        status_code = '200 OK'
 
-    # TO DO: read the data from the file
-    data = get_file_data(filename)
+    http_header = ('HTTP/1.1 %s\r\n' % status_code) + optional_field
 
-    http_header = ('HTTP/1.1 %s\r\n' % status_code) + optional_field + 'Content-Length: %d\r\n' % len(data)
+    if not status_code == '200 OK':
+        client_socket.send(http_header.encode())
+    else:
+        # TO DO: read the data from the file
+        data = get_file_data(filename)
 
-    if filetype == 'html':
-        http_header += 'Content-Type: %s\r\n' % 'text/html; charset=utf-8'
-    elif filetype == 'jpg':
-        http_header += 'Content-Type: %s\r\n' % 'image/jpeg'
-    elif filetype == 'js':
-        http_header += 'Content-Type: %s\r\n' % 'text/javascript; charset=UTF-8'
-    elif filetype == 'css':
-        http_header += 'Content-Type: %s\r\n' % 'text/css'
+        http_header += 'Content-Length: %d\r\n' % len(''.join(data))
 
-    # content_length = 'Content-Length: %d\n' % len(data)
-    # http_response = http_header + data
-    # client_socket.sendall(http_response.encode())
-    # client_socket.send(('HTTP/1.1 %s\n' % status_code).encode())
-    client_socket.send(http_header.encode())
-    # client_socket.send(content_length.encode())
-    client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
-    client_socket.sendall(data.encode())
+        if filetype == 'html':
+            http_header += 'Content-Type: %s\r\n' % 'text/html; charset=utf-8'
+        elif filetype == 'jpg':
+            http_header += 'Content-Type: %s\r\n' % 'image/jpeg'
+        elif filetype == 'js':
+            http_header += 'Content-Type: %s\r\n' % 'text/javascript; charset=UTF-8'
+        elif filetype == 'css':
+            http_header += 'Content-Type: %s\r\n' % 'text/css'
+        http_header += '\r\n'
+        client_socket.send(http_header.encode())
+        # client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
+        chunk = data[0]
+        client_socket.sendall(chunk.encode())
+        for chunk in data[1:]:
+            client_socket.sendall(chunk.encode())
+
 
 def validate_http_request(request):
     """ Check if request is a valid HTTP request and returns TRUE / FALSE and the requested URL """
@@ -91,32 +109,23 @@ def validate_http_request(request):
 def handle_client(client_socket):
     """ Handles client requests: verifies client's requests are legal HTTP, calls function to handle the requests """
     print('Client connected')
+    i = 0
     while True:
         # TO DO: insert code that receives client request
-
-        # client_request = recv_basic(client_socket)
-        client_request = client_socket.recv(4096).decode()
-        # client_request = recv_basic(client_socket)
-
+        client_request = client_socket.recv(1024).decode()
 
         valid_http, resource = validate_http_request(client_request)
+        i += 1
         if valid_http:
             print('Got a valid HTTP request')
             handle_client_request(resource, client_socket)
         else:
             print(resource)
             break
+        #if i == 10:
+         #   break
     print('Closing connection')
     client_socket.close()
-
-def recv_basic(the_socket):
-    # total_data = []
-    # while True:
-    #     data = the_socket.recv(8192)
-    #     if not data: break
-    #     total_data.append(data.decode())
-    # return ''.join(total_data)
-    return the_socket.recv(8192).decode()
 
 def main():
     # Open a socket and loop forever while waiting for clients
@@ -130,6 +139,7 @@ def main():
         print('New connection received')
         client_socket.settimeout(SOCKET_TIMEOUT)
         handle_client(client_socket)
+
 
 if __name__ == "__main__":
     # Call the main handler function
