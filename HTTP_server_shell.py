@@ -109,21 +109,17 @@ def validate_http_request(request):
 def handle_client(client_socket):
     """ Handles client requests: verifies client's requests are legal HTTP, calls function to handle the requests """
     print('Client connected')
-    i = 0
     while True:
         # TO DO: insert code that receives client request
         client_request = client_socket.recv(1024).decode()
 
         valid_http, resource = validate_http_request(client_request)
-        i += 1
         if valid_http:
             print('Got a valid HTTP request')
             handle_client_request(resource, client_socket)
         else:
             print(resource)
             break
-        #if i == 10:
-         #   break
     print('Closing connection')
     client_socket.close()
 

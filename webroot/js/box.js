@@ -37,3 +37,4 @@ box.addEventListener("click",  function(){
   moveLeftTimeout();
   moveDownInterval();
 })
+
