@@ -88,7 +88,7 @@ def handle_client_request(resource, client_socket):
                 http_header += 'Content-Type: %s\r\n' % 'text/css'
             else:
                 http_header += '\r\n'
-            http_header += '\r\n'
+
             client_socket.send(http_header.encode())
             client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
             client_socket.send(data)
