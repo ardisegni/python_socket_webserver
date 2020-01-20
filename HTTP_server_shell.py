@@ -33,15 +33,20 @@ def handle_client_request(resource, client_socket):
     resource = resource[1:]
     if resource.startswith('calculate-next'):
         params = resource.split('?')[1]
-        num_param = params.split('=')[1]
-        next_number = str(calculate_next(int(num_param)))
+        num_param = int(params.split('=')[1])
+        next_number = str(calculate_next(num_param))
 
-        http_header = 'HTTP/1.1 200 OK\r\n'
-        http_header += 'Content-Length: %d\r\n' % len(next_number)
+        send_http_response(client_socket, next_number)
+        return
 
-        client_socket.send(http_header.encode())
-        client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
-        client_socket.send(next_number.encode())
+    if resource.startswith('calculate-area'):
+        params = resource.split('?')[1]
+        params = params.split('&')
+        height = int(params[0].split('=')[1])
+        width = int(params[1].split('=')[1])
+        area = str(calculate_area(height, width))
+
+        send_http_response(client_socket, area)
         return
 
     """ Check the required resource, generate proper HTTP response and send to client"""
@@ -93,6 +98,14 @@ def handle_client_request(resource, client_socket):
             client_socket.send(http_header.encode())
 
 
+def send_http_response(client_socket, data):
+    http_header = 'HTTP/1.1 200 OK\r\n'
+    http_header += 'Content-Length: %d\r\n' % len(data)
+    client_socket.send(http_header.encode())
+    client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
+    client_socket.send(data.encode())
+
+
 def validate_http_request(request):
     """ Check if request is a valid HTTP request and returns TRUE / FALSE and the requested URL """
     # TO DO: write function
@@ -129,6 +142,10 @@ def handle_client(client_socket):
 
 def calculate_next(number):
     return number + 1
+
+
+def calculate_area(height, width):
+    return int(height * width / 2)
 
 
 def main():
