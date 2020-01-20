@@ -3,7 +3,6 @@
 # Purpose: Provide a basis for Ex. 4.4
 # Note: The code is written in a simple way, without classes, log files or other utilities, for educational purpose
 # Usage: Fill the missing functions and constants
-# tfyhgjkjjkl
 import os
 import socket
 
