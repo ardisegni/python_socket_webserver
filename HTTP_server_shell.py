@@ -17,24 +17,23 @@ SOCKET_TIMEOUT = 60000
 
 
 def get_file_data(filename):
-    filetype = filename.split('.')[-1]
-
     """ Get data from file """
     print('Trying to open file ' + filename)
-    if filetype == 'ico' or filetype == 'jpg':
-        file = open(filename, 'r')
-    else:
-        file = open(filename, 'r', encoding="utf8")
+    file = open(filename, 'rb')
 
+    chunk = 0
+    data_length = 0
     with file as f:
-        chunk = f.read(1024)
-        file_data = (chunk,)
-        while chunk:
-            print("Reading chunk")
-            chunk = f.read(1024)
-            file_data += (chunk,)
+        #     chunk = f.read(1024)
+        #     file_data = (chunk,)
+        #     data_length += len(chunk)
+        #     while chunk:
+        #         print("Reading chunk")
+        chunk = f.read()
+        #         file_data += (chunk,)
+        data_length += len(chunk)
 
-    return file_data
+    return chunk, data_length
 
 
 def handle_client_request(resource, client_socket):
@@ -65,13 +64,13 @@ def handle_client_request(resource, client_socket):
         client_socket.send(http_header.encode())
     else:
         # TO DO: read the data from the file
-        data = get_file_data(filename)
+        data, data_length = get_file_data(filename)
 
-        http_header += 'Content-Length: %d\r\n' % len(''.join(data))
+        http_header += 'Content-Length: %d\r\n' % data_length
 
         if filetype == 'html':
             http_header += 'Content-Type: %s\r\n' % 'text/html; charset=utf-8'
-        elif filetype == 'jpg':
+        elif filetype == 'jpg' or filetype == 'ico':
             http_header += 'Content-Type: %s\r\n' % 'image/jpeg'
         elif filetype == 'js':
             http_header += 'Content-Type: %s\r\n' % 'text/javascript; charset=UTF-8'
@@ -80,10 +79,10 @@ def handle_client_request(resource, client_socket):
         http_header += '\r\n'
         client_socket.send(http_header.encode())
         client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
-        chunk = data[0]
-        client_socket.sendall(chunk.encode())
-        for chunk in data[1:]:
-            client_socket.sendall(chunk.encode())
+        # chunk = data[0]
+        client_socket.sendall(data)
+        # for chunk in data[1:]:
+        #     client_socket.sendall(chunk)
 
 
 def validate_http_request(request):
