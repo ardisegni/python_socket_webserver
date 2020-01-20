@@ -30,6 +30,20 @@ def get_file_data(filename):
 
 
 def handle_client_request(resource, client_socket):
+    resource = resource[1:]
+    if resource.startswith('calculate-next'):
+        params = resource.split('?')[1]
+        num_param = params.split('=')[1]
+        next_number = str(calculate_next(int(num_param)))
+
+        http_header = 'HTTP/1.1 200 OK\r\n'
+        http_header += 'Content-Length: %d\r\n' % len(next_number)
+
+        client_socket.send(http_header.encode())
+        client_socket.send('\r\n'.encode())  # header and body should be separated by additional newline
+        client_socket.send(next_number.encode())
+        return
+
     """ Check the required resource, generate proper HTTP response and send to client"""
     # TO DO : add code that given a resource (URL and parameters) generates the proper response
     if resource == '' or resource == '/':
@@ -111,6 +125,10 @@ def handle_client(client_socket):
             break
     print('Closing connection')
     client_socket.close()
+
+
+def calculate_next(number):
+    return number + 1
 
 
 def main():
