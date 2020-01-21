@@ -145,7 +145,7 @@ def calculate_next(number):
 
 
 def calculate_area(height, width):
-    return int(height * width / 2)
+    return height * width / 2
 
 
 def main():
